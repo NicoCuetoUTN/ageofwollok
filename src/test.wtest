@@ -1,0 +1,163 @@
+import ageofwollok.*
+describe "Tests de age of wollok" {
+	const equipo1 = new Equipo()
+	const equipoPobre = new Equipo(recursos = 125)
+	const equipoRico = new Equipo(recursos = 99999)
+	
+	fixture {
+		10.times({	i =>
+			equipoRico.construirNuevaCasa()
+		})
+		equipoRico.avanzarConstruccionDeCasas(100)
+	}
+	test "Crear aldeano consume 50 puntos de recursos" {
+		equipo1.crearAldeano(ocioso) //resta 50
+		assert.equals(950, equipo1.recursos())
+	}
+	test "Granjero aporta recursos al equipo"{
+		equipo1.crearAldeano(granjero) //resta 50
+		const aldeano = equipo1.unidades().first()
+		aldeano.vivirUnAnio(equipo1) //suma 10
+		assert.equals(960, equipo1.recursos())
+	}
+	test "Leñador aporta recursos al equipo si tiene madera su árbol"{
+		equipo1.crearAldeano(new Leniador()) //resta 50
+		const aldeano = equipo1.unidades().first()
+		aldeano.vivirUnAnio(equipo1)//suma 15
+		assert.equals(965, equipo1.recursos())
+	}	
+	test "Leñador no aporta recursos al equipo si no tiene madera su árbol"{
+		equipo1.crearAldeano(new Leniador())//resta 50
+		const aldeano = equipo1.unidades().first()
+		4.times({	i =>
+			aldeano.vivirUnAnio(equipo1) // suma 15 las 3 primeras
+		})
+		assert.equals(995, equipo1.recursos())
+	}	
+	test "Constructor pasa a ocioso si no hay casas"{
+		equipo1.crearAldeano(constructore) //resta 50
+		const aldeano = equipo1.unidades().first()
+		aldeano.vivirUnAnio(equipo1)
+		assert.equals(ocioso, aldeano.tarea())
+	}		
+	test "Constructor pasa a ocioso si las casas están al 100%"{
+		equipo1.crearAldeano(constructore) 
+		const aldeano = equipo1.unidades().first()
+		equipo1.construirNuevaCasa()
+		equipo1.avanzarConstruccionDeCasas(100)
+		aldeano.vivirUnAnio(equipo1)
+		assert.equals(ocioso, aldeano.tarea())
+	}		
+	test "Constructor avanza casas un 10% y sigue siendo constructor"{
+		equipo1.crearAldeano(constructore) 
+		const aldeano = equipo1.unidades().first()
+		equipo1.construirNuevaCasa()
+		aldeano.vivirUnAnio(equipo1)
+		assert.equals(constructore, aldeano.tarea())
+		assert.equals(10,equipo1.casas().first().avanceConstruccion())
+	}	
+	test "Si supera límite poblacional no crea aldeano ni gasta recursos"{
+		5.times({	i =>
+			equipo1.crearAldeano(ocioso) 
+		})
+		assert.throwsExceptionWithType(new LimitePoblacionalException(), { equipo1.crearAldeano(ocioso) })
+		assert.equals(5, equipo1.unidades().size())
+		assert.equals(750, equipo1.recursos())
+	}		
+	test "Si no alcanzan recursos no crea aldeano ni gasta recursos"{
+		2.times({	i =>
+			equipoPobre.crearAldeano(ocioso) 
+		})
+		assert.throwsExceptionWithType(new RecursosInsuficientesException(), { equipoPobre.crearAldeano(ocioso) })
+		assert.equals(2, equipoPobre.unidades().size())
+		assert.equals(25, equipoPobre.recursos())
+	}
+	test "Si pasa un año todos los aldeanos juntan sus recursos"{
+		equipo1.crearAldeano(granjero) //resta 50
+		equipo1.crearAldeano(granjero) //resta 50
+		equipo1.crearAldeano(new Leniador())//resta 50
+		equipo1.crearAldeano(new Leniador())//resta 50
+		equipo1.pasarUnAnio() // suman 15 y 10
+		const recursosFinalesEsperados = 1000 - 50*4 + 15*2 + 10*2
+		assert.equals(recursosFinalesEsperados, equipo1.recursos())
+	}
+	test "Si pasa un año todos los guerreros se alimentan"{
+		10.times({	i =>
+			equipoRico.crearGuerrero(arquero)
+		})
+		equipoRico.pasarUnAnio() // suman 15 y 10
+		
+		const recursosFinalesEsperados = 99999 - 10*70 - 10*2
+		assert.equals(recursosFinalesEsperados, equipoRico.recursos())
+	}
+	test "Si supera límite poblacional no crea guerrero ni gasta recursos"{
+		5.times({	i =>
+			equipo1.crearGuerrero(arquero)
+		})
+		assert.throwsExceptionWithType(new LimitePoblacionalException(), { equipo1.crearGuerrero(arquero) })
+		assert.equals(5, equipo1.unidades().size())
+		assert.equals(1000-(70*5), equipo1.recursos())
+	}
+	test "Si no alcanzan recursos no crea guerrero ni gasta recursos" {
+		equipoPobre.crearGuerrero(arquero)
+		assert.throwsExceptionWithType(new RecursosInsuficientesException(), { equipoPobre.crearGuerrero(arquero) })
+		assert.equals(1, equipoPobre.unidades().size())
+		assert.equals(125-70, equipoPobre.recursos())
+	}
+	test "Si hay casas terminadas aumenta límite poblacional" {
+		equipo1.construirNuevaCasa()
+		equipo1.avanzarConstruccionDeCasas(100)
+		assert.equals(10, equipo1.limiteDePoblacion())
+	}
+	test "Si hay casas sin terminar no aumenta límite poblacional" {
+		equipo1.construirNuevaCasa()
+		equipo1.avanzarConstruccionDeCasas(90)
+		assert.equals(5, equipo1.limiteDePoblacion())
+	}
+	test "Al reasignar, los aldeanos ociosos pasan a ser constructores" {
+		equipo1.crearAldeano(ocioso) 
+		equipo1.reasignarUnidades()
+		assert.equals(constructore, equipo1.unidades().first().tarea())
+	}
+	test "Al reasignar, los leñadores sin árbol pasan a uno nuevo" {
+		const tarea = new Leniador(arbol = new Arbol(madera=0))
+		equipo1.crearAldeano(tarea) 
+		equipo1.reasignarUnidades()
+		assert.equals(50, equipo1.unidades().first().tarea().arbol().madera())
+	}
+	test "Equipo es agresivo si tiene más de 10 de diferencia y más de 20 de ataque" {
+		//3 ptos ataque cada arquero, 1 de defensa, total 21 ataque, 7 defensa
+		7.times({ i =>
+			equipoRico.crearGuerrero(arquero)		
+		})
+		
+		assert.that(equipoRico.esAgresivo())
+	}
+	test "Equipo no es agresivo si tiene más defensa que ataque" {
+		//1 ptos ataque cada miliciano, 3 de defensa
+		//total ataque 20, 60 de defensa
+		20.times({	i =>
+			equipoRico.crearGuerrero(miliciano)
+		})
+		
+		assert.notThat(equipoRico.esAgresivo())
+	}
+	test "Equipo no es agresivo si tiene menos de 10 de diferencia entre ataque y defensa" {
+		//total ataque 43, 41 de defensa
+		10.times({	i =>
+			equipoRico.crearGuerrero(miliciano)
+			equipoRico.crearGuerrero(arquero)
+		})
+		equipoRico.crearGuerrero(arquero)
+		
+		assert.notThat(equipoRico.esAgresivo())
+	}
+	test "Equipo no es agresivo si tiene menos de 20 de ataque" {
+		//total ataque 18, 8 de defensa
+		6.times({	i =>
+			equipoRico.crearGuerrero(arquero)
+		})
+		assert.notThat(equipoRico.esAgresivo())
+	}
+	
+}
