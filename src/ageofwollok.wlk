@@ -112,13 +112,12 @@ class Leniador {
 	var arbol = new Arbol()
 	method arbol() = arbol
 	method trabajarUnAnio(equipo, aldeano){
-		if (arbol.puedeRestar(15)){
-			arbol.restarMadera(15)
-			equipo.agregarRecursos(15)
-		}
+		const cuantoColecta = [arbol.madera(), 15].min()
+		arbol.restarMadera(cuantoColecta)
+		equipo.agregarRecursos(cuantoColecta)
 	}
 	method reasignar(aldeano){
-		if (not arbol.puedeRestar(15)){
+		if (not arbol.leQuedaAlgo()){
 			arbol = new Arbol()
 		}	
 	}
@@ -126,7 +125,7 @@ class Leniador {
 class Arbol {
 	var madera = 50
 	method madera() = madera
-	method puedeRestar(cantidad) = madera - cantidad >= 0
+	method leQuedaAlgo() = madera > 0
 	method restarMadera(cantidad){
 		madera -= cantidad
 	}

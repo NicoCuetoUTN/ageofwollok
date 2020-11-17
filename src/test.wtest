@@ -29,10 +29,10 @@ describe "Tests de age of wollok" {
 	test "Leñador no aporta recursos al equipo si no tiene madera su árbol"{
 		equipo1.crearAldeano(new Leniador())//resta 50
 		const aldeano = equipo1.unidades().first()
-		4.times({	i =>
-			aldeano.vivirUnAnio(equipo1) // suma 15 las 3 primeras
+		5.times({	i =>
+			aldeano.vivirUnAnio(equipo1) // suma 15 las 3 primeras y 5 la 4ta, nada la 5ta
 		})
-		assert.equals(995, equipo1.recursos())
+		assert.equals(1000, equipo1.recursos())
 	}	
 	test "Constructor pasa a ocioso si no hay casas"{
 		equipo1.crearAldeano(constructore) //resta 50
