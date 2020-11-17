@@ -63,8 +63,8 @@ class Equipo {
 	
 	method tieneCasasPendientes() = casas.any({ casa => not casa.estaTerminada() })
 	
-	method avanzarConstruccionDeCasas(porcentaje){
-		casas.forEach( { casa => casa.avanzarConstruccion(porcentaje) })
+	method avanzarConstruccionDeCasas(){
+		casas.forEach( { casa => casa.avanzarConstruccion(10) })
 	}
 	
 	method reasignarUnidades(){
@@ -133,7 +133,7 @@ class Arbol {
 object constructore {
 	method trabajarUnAnio(equipo, aldeano){
 		if (equipo.tieneCasasPendientes()){
-			equipo.avanzarConstruccionDeCasas(10)			
+			equipo.avanzarConstruccionDeCasas()			
 		} else {
 			aldeano.pasarAOcioso()
 		}
@@ -184,8 +184,12 @@ class Persa inherits Equipo {
 	}
 }
 class Espaniol inherits Equipo {
-	override method avanzarConstruccionDeCasas(porcentaje){
-		super(100) 
+	override method avanzarConstruccionDeCasas(){
+		self.completarCasas()
+	}
+	
+	method completarCasas(){
+		casas.forEach({unaCasa => unaCasa.avanzarConstruccion(100)})
 	}
 }
 class Huno inherits Equipo {
